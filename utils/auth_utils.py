@@ -1,6 +1,6 @@
 import jwt
 from fastapi import Header, HTTPException
-from ..config import SECRET_KEY
+from config import SECRET_KEY
 
 
 def parse(doc: dict) -> dict:
