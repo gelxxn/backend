@@ -12,7 +12,9 @@ MONGO_URI = os.environ.get("MONGO_URI")
 if not MONGO_URI:
     raise RuntimeError("setting MONGO_URI in environment variable")
 
-client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+client = MongoClient(MONGO_URI, 
+                     serverSelectionTimeoutMS=5000,
+                     tlsAllowInvalidCertificates=True,)
 
 vocab_db = client["Vocabulary"]
 vocabs_col = vocab_db["Vocabulary"]
