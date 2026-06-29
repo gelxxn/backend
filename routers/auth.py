@@ -2,8 +2,8 @@ import bcrypt
 import jwt
 from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException
-from ..config import SECRET_KEY, users_col
-from ..models.schemas import RegisterRequest, LoginRequest
+from config import SECRET_KEY, users_col
+from models.schemas import RegisterRequest, LoginRequest
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 

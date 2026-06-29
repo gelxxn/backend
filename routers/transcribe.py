@@ -1,6 +1,6 @@
 import numpy as np
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from ..config import whisper_model
+from config import whisper_model
 
 router = APIRouter(tags=["Transcribe"])
 
@@ -17,7 +17,6 @@ async def websocket_endpoint(websocket: WebSocket):
             chunk = await websocket.receive_bytes()
             audio_buffer.extend(chunk)
 
-            # สะสมเสียงอย่างน้อย 0.5 วินาที
             if len(audio_buffer) >= 32000:
                 audio_np = (
                     np.frombuffer(audio_buffer, dtype=np.int16)

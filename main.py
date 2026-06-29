@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import auth, vocab, progress, transcribe
+from routers import auth, vocab, progress, transcribe
 
 app = FastAPI(title="SpeakEase API")
 

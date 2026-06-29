@@ -1,8 +1,8 @@
 from datetime import datetime
 from fastapi import APIRouter, Header
-from ..config import vocabs_col, progress_col
-from ..models.schemas import ProgressRequest
-from ..utils.auth_utils import get_user_id
+from config import vocabs_col, progress_col
+from models.schemas import ProgressRequest
+from utils.auth_utils import get_user_id
 
 router = APIRouter(prefix="/progress", tags=["Progress"])
 

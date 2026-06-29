@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from ..config import vocabs_col
-from ..utils.auth_utils import parse
+from config import vocabs_col
+from utils.auth_utils import parse
 
 router = APIRouter(prefix="/vocabs", tags=["Vocab"])
 
