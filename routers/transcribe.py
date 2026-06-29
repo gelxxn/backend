@@ -1,6 +1,6 @@
 import numpy as np
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from config import whisper_model
+from config import get_whisper
 
 router = APIRouter(tags=["Transcribe"])
 
@@ -22,7 +22,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     np.frombuffer(audio_buffer, dtype=np.int16)
                     .astype(np.float32) / 32768.0
                 )
-                segments, _ = whisper_model.transcribe(
+                segments, _ = get_whisper().transcribe(
                     audio_np, beam_size=5, language="th"
                 )
                 text_result = "".join(s.text for s in segments).strip()
