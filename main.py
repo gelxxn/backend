@@ -20,6 +20,6 @@ app.include_router(transcribe.router)
 
 @app.get("/health")
 def health():
-    from backend.config import client
+    from config import client
     client.admin.command("ping")
     return {"status": "ok"}
