@@ -1,2 +1,0 @@
-# backend
-speech_training
