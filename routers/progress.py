@@ -1,15 +1,20 @@
-from datetime import datetime
-from fastapi import APIRouter, Header
+from datetime import datetime, timezone
+from fastapi import APIRouter, Header, HTTPException
+from bson import ObjectId
 from config import vocabs_col, progress_col
 from models.schemas import ProgressRequest
 from utils.auth_utils import get_user_id
 
 router = APIRouter(prefix="/progress", tags=["Progress"])
 
-
 @router.get("/all-levels")
 def get_all_levels_progress(authorization: str = Header(...)):
     user_id = get_user_id(authorization)
+
+    try:
+        user_object_id = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="รูปแบบ User ID ไม่ถูกต้อง")
 
     vocab_pipeline = [
         {"$group": {"_id": "$level", "total": {"$sum": 1}}}
@@ -22,7 +27,7 @@ def get_all_levels_progress(authorization: str = Header(...)):
     }
 
     progress_pipeline = [
-        {"$match": {"user_id": user_id, "is_completed": True}},
+        {"$match": {"user_id": user_object_id, "is_completed": True}},
         {"$group": {"_id": "$level", "completed": {"$sum": 1}}},
     ]
     progress_counts = list(progress_col.aggregate(progress_pipeline))
@@ -36,14 +41,24 @@ def get_all_levels_progress(authorization: str = Header(...)):
     for lvl in range(1, 10):
         total = total_by_level.get(lvl, 0)
         completed = completed_by_level.get(lvl, 0)
-        result[str(lvl)] = round(completed / total, 2) if total > 0 else 0.0
+        percentage = round(completed / total, 2) if total > 0 else 0.0
+        
+        result[f"level_{lvl}"] = {
+            "total": total,
+            "completed": completed,
+            "progress": percentage
+        }
 
     return result
-
 
 @router.get("/level/{level}")
 def get_level_progress(level: int, authorization: str = Header(...)):
     user_id = get_user_id(authorization)
+
+    try:
+        user_object_id = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="รูปแบบ User ID ไม่ถูกต้อง")
 
     pipeline = [
         {"$match": {"level": level}},
@@ -53,7 +68,7 @@ def get_level_progress(level: int, authorization: str = Header(...)):
     sub_categories = list(vocabs_col.aggregate(pipeline))
 
     completed = list(progress_col.find({
-        "user_id": user_id,
+        "user_id": user_object_id,
         "level": level,
         "is_completed": True,
     }))
@@ -75,21 +90,27 @@ def get_level_progress(level: int, authorization: str = Header(...)):
         for s in sub_categories
     ]
 
-
 @router.post("")
 def save_progress(req: ProgressRequest, authorization: str = Header(...)):
     user_id = get_user_id(authorization)
+    try:
+        user_object_id = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="รูปแบบ User ID ไม่ถูกต้อง")
+
+    try:
+        vocab_object_id = ObjectId(req.vocab_id)
+    except Exception:
+        vocab_object_id = req.vocab_id 
 
     progress_col.update_one(
-        {"user_id": user_id, "vocab_id": req.vocab_id},
+        {"user_id": user_object_id, "vocab_id": vocab_object_id},
         {"$set": {
-            "user_id": user_id,
-            "vocab_id": req.vocab_id,
             "level": req.level,
             "sub_category": req.sub_category,
             "is_completed": req.is_completed,
             "best_score": req.best_score,
-            "practiced_at": datetime.utcnow(),
+            "practiced_at": datetime.now(timezone.utc),
         }},
         upsert=True,
     )

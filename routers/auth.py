@@ -1,6 +1,6 @@
 import bcrypt
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException
 from config import SECRET_KEY, users_col
 from models.schemas import RegisterRequest, LoginRequest
@@ -13,18 +13,22 @@ def register(req: RegisterRequest):
     if users_col.find_one({"email": req.email}):
         raise HTTPException(status_code=400, detail="อีเมลนี้ถูกใช้แล้ว")
 
-    hashed = bcrypt.hashpw(req.password.encode(), bcrypt.gensalt())
+    hashed = bcrypt.hashpw(req.password.encode('utf-8'), bcrypt.gensalt())
+    # convert hash to String before save >> avoid problem about type's driver
+    hashed_str = hashed.decode('utf-8')
+
     user = {
         "email": req.email,
-        "password": hashed,
+        "password": hashed_str,
         "display_name": req.display_name,
-        "created_at": datetime.utcnow(),
+        "created_at": datetime.now(timezone.utc),
     }
     result = users_col.insert_one(user)
+
     token = jwt.encode(
         {
             "user_id": str(result.inserted_id),
-            "exp": datetime.utcnow() + timedelta(days=30),
+            "exp": datetime.now(timezone.utc) + timedelta(days=30),
         },
         SECRET_KEY,
         algorithm="HS256",
@@ -35,13 +39,17 @@ def register(req: RegisterRequest):
 @router.post("/login")
 def login(req: LoginRequest):
     user = users_col.find_one({"email": req.email})
-    if not user or not bcrypt.checkpw(req.password.encode(), user["password"]):
+    if not user:
+        raise HTTPException(status_code=401, detail="อีเมลหรือรหัสผ่านไม่ถูกต้อง")
+    
+    stored_password = user["password"].encode('utf-8') if isinstance(user["password"], str) else user["password"]
+    if bcrypt.checkpw(req.password.encode('utf-8'), stored_password):
         raise HTTPException(status_code=401, detail="อีเมลหรือรหัสผ่านไม่ถูกต้อง")
 
     token = jwt.encode(
         {
             "user_id": str(user["_id"]),
-            "exp": datetime.utcnow() + timedelta(days=30),
+            "exp": datetime.now(timezone.utc) + timedelta(days=30),
         },
         SECRET_KEY,
         algorithm="HS256",
