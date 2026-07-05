@@ -11,6 +11,7 @@ class LoginRequest(BaseModel):
 
 class ProgressRequest(BaseModel):
     vocab_id: str
+    vocab_text: str     
     level: int
     sub_category: str
     is_completed: bool

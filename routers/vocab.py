@@ -4,12 +4,10 @@ from utils.auth_utils import parse
 
 router = APIRouter(prefix="/vocabs", tags=["Vocab"])
 
-
 @router.get("")
 def get_all_vocabs():
     docs = list(vocabs_col.find())
     return [parse(d) for d in docs]
-
 
 @router.get("/levels")
 def get_levels():

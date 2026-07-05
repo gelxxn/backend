@@ -23,3 +23,9 @@ vocabs_col = vocab_db["Vocabulary"]
 auth_db = client["Auth"]
 users_col = auth_db["user"]
 progress_col = auth_db["progress"]
+streaks_col = auth_db["streaks"]
+
+streaks_col.create_index("user_id", unique=True)
+progress_col.create_index([("user_id", 1), ("sub_category", 1)])
+progress_col.create_index([("user_id", 1), ("practiced_at", -1)])
+progress_col.create_index([("user_id", 1), ("vocab_id", 1)], unique=True)
