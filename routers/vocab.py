@@ -83,6 +83,7 @@ def get_vocab(vocab_text: str):
             "image_url": 1,
             "lip_landmarks": 1,
             "audio_features": 1,
+            "pronunciation_guide": 1,
         },
     )
     if not doc:
