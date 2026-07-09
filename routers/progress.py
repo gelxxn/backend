@@ -103,12 +103,12 @@ def get_vocab_progress_by_sub(sub_category: str, authorization: str = Header(...
 @router.get("/streak")
 def get_streak(authorization: str = Header(...)):
     user_id = get_user_id(authorization)
- 
+
     try:
         user_object_id = ObjectId(user_id)
     except Exception:
         raise HTTPException(status_code=400, detail="รูปแบบ User ID ไม่ถูกต้อง")
- 
+
     doc = streaks_col.find_one({"user_id": user_object_id})
     if not doc:
         return {
@@ -117,15 +117,18 @@ def get_streak(authorization: str = Header(...)):
             "last_practiced_word": None,
             "last_practiced_level": None,
             "last_practiced_sub_category": None,
+            "last_practiced_best_score": 0.0,  # 🔁 เพิ่ม
         }
- 
+
     return {
         "current_streak": doc.get("current_streak", 0),
         "practiced_days_this_week": doc.get("practiced_days_this_week", [False] * 7),
         "last_practiced_word": doc.get("last_practiced_word"),
         "last_practiced_level": doc.get("last_practiced_level"),
         "last_practiced_sub_category": doc.get("last_practiced_sub_category"),
+        "last_practiced_best_score": doc.get("last_practiced_best_score", 0.0),  # 🔁 เพิ่ม
     }
+
 
 @router.get("/recent")
 def get_recent_lessons(limit: int = 3, authorization: str = Header(...)):
@@ -214,12 +217,12 @@ def get_achievements(authorization: str = Header(...)):
 def _thai_weekday_index(dt: datetime) -> int:
     return dt.weekday()
  
-def _update_streak(user_object_id: ObjectId, vocab_text: str, level: int, sub_category: str):
+def _update_streak(user_object_id: ObjectId, vocab_text: str, level: int, sub_category: str, best_score: float):
     now = datetime.now(timezone.utc)
     today = now.date()
- 
+
     doc = streaks_col.find_one({"user_id": user_object_id})
- 
+
     if not doc:
         practiced_days = [False] * 7
         practiced_days[_thai_weekday_index(now)] = True
@@ -230,13 +233,14 @@ def _update_streak(user_object_id: ObjectId, vocab_text: str, level: int, sub_ca
             "last_practiced_word": vocab_text,
             "last_practiced_level": level,
             "last_practiced_sub_category": sub_category,
+            "last_practiced_best_score": best_score,  # 🔁 เพิ่ม
             "last_updated": now,
         })
         return
- 
+
     last_updated = doc.get("last_updated")
     last_date = last_updated.date() if last_updated else None
- 
+
     if last_date == today:
         new_streak = doc.get("current_streak", 1)
         practiced_days = doc.get("practiced_days_this_week", [False] * 7)
@@ -246,9 +250,9 @@ def _update_streak(user_object_id: ObjectId, vocab_text: str, level: int, sub_ca
     else:
         new_streak = 1
         practiced_days = [False] * 7
- 
+
     practiced_days[_thai_weekday_index(now)] = True
- 
+
     streaks_col.update_one(
         {"user_id": user_object_id},
         {"$set": {
@@ -257,6 +261,7 @@ def _update_streak(user_object_id: ObjectId, vocab_text: str, level: int, sub_ca
             "last_practiced_word": vocab_text,
             "last_practiced_level": level,
             "last_practiced_sub_category": sub_category,
+            "last_practiced_best_score": best_score,  # 🔁 เพิ่ม
             "last_updated": now,
         }},
     )
@@ -287,6 +292,6 @@ def save_progress(req: ProgressRequest, authorization: str = Header(...)):
         upsert=True,
     )
 
-    _update_streak(user_object_id, req.vocab_text, req.level, req.sub_category)
+    _update_streak(user_object_id, req.vocab_text, req.level, req.sub_category, req.best_score)  
 
     return {"status": "ok"}
