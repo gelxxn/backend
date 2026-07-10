@@ -33,7 +33,12 @@ def register(req: RegisterRequest):
         SECRET_KEY,
         algorithm="HS256",
     )
-    return {"token": token, "display_name": req.display_name}
+    return {
+        "token": token,
+        "display_name": req.display_name,
+        "user_id": str(result.inserted_id),
+        "email": req.email,
+    }
 
 
 @router.post("/login")
@@ -54,4 +59,9 @@ def login(req: LoginRequest):
         SECRET_KEY,
         algorithm="HS256",
     )
-    return {"token": token, "display_name": user["display_name"]}
+    return {
+        "token": token,
+        "display_name": user["display_name"],
+        "user_id": str(user["_id"]),
+        "email": user["email"],
+    }
